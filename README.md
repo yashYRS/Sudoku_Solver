@@ -8,8 +8,8 @@ Steps For Using the application :
   5. Else, the sudoku has to be entered at command line, and the solution will be displayed. 
   
    ## Input_image - 
-   <img src = "sample.jpeg" />
+   <img src = "Images/sample.jpeg" />
    
    ## Solution Displayed -
-<img src = "solution.png"/>
+<img src = "Images/solution.png"/>
    
