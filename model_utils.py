@@ -9,13 +9,6 @@ import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def show(img, name):
-    cv2.namedWindow(name, cv2.WINDOW_NORMAL)
-    cv2.imshow(name, img)
-    cv2.waitKey(0)
-    cv2.destroyWindow(name)
-
-
 # ##----------LOAD THE DATA ------------------###
 # list of folders/files in a given directory
 list_folder = os.listdir("./Data")

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 
-def enter():
+def enter_board_manually():
     board = []
     for i in range(9):
         row = list(input(" Enter first row "))
@@ -13,7 +13,7 @@ def enter():
     return board
 
 
-def show(img, name):
+def display_img(img, name):
     cv2.namedWindow(name, cv2.WINDOW_NORMAL)
     cv2.imshow(name, img)
     cv2.waitKey(0)
@@ -33,7 +33,7 @@ def draw_detected(lines, img):
         y2 = int(b*ppd - 1000*(a))
         # draw line on the original to verify whether all lines have been drawn
         cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
-    show(img, "detected lines")
+    display_img(img, "detected lines")
 
 
 def flag_lines(lines, img):
@@ -91,11 +91,11 @@ def get_board(img, points, model):
             if(temp.size != 0):
                 # to maintain uniformity with the model's requirements
                 temp = cv2.resize(temp, (36, 36))
-                show(temp, "adf")
+                display_img(temp, "adf")
                 cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
                 # predict the label
                 row_board.append(int(model.predict(np.reshape(temp, (1, -1)))))
         print(row_board)
         board.append(row_board)
-    show(img, "ADF")
+    display_img(img, "ADF")
     return board
