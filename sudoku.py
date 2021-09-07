@@ -22,7 +22,7 @@ def generate_result(board):
     pen.getscreen().update()    # make the board
 
     board = np.array(board)
-    if solve(board, pen, Xboard_start, Yboard_start):
+    if GU.solve(board, pen, Xboard_start, Yboard_start):
         GU.write_text(" SOLVED ", -70, 250, 18, pen)
         print("done")
     else:

@@ -6,8 +6,11 @@ import torch
 import torch.nn
 from torchvision import datasets, transforms
 
+norm_params = ((0.5,), (0.5,))
 test_transforms = transforms.Compose([transforms.Resize((28, 28)),
-                                      transforms.ToTensor()])
+                                      transforms.ToTensor(),
+                                      transforms.Normalize(*norm_params)
+                                      ])
 
 
 class LogisticRegression(torch.nn.Module):
@@ -32,7 +35,6 @@ def getNumCorrect(correct, outputs, labels):
 
 def get_dataset(batchsize=64):
     # Function to import datasets to be used for training
-    norm_params = ((0.5,), (0.5,))
     train_transform = transforms.Compose([
                             transforms.ToTensor(),
                             transforms.Normalize(*norm_params)

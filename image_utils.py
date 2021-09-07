@@ -7,7 +7,7 @@ import model_utils as MU
 def enter_board_manually():
     board = []
     for i in range(9):
-        row = list(input(" Enter first row "))
+        row = list(input(" Enter row ", i+1))
         row = list(filter(lambda a: a != ' ', row))
         row = [int(i) for i in row]
         board.append(row)

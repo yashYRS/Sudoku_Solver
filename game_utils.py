@@ -3,6 +3,7 @@ import numpy as np
 
 
 def is_solvable(board):
+    board = np.array(board)
     for row in range(9):
         for i in range(1, 10):
             temp_row = [1 for a in board[row] if a == i]
@@ -10,7 +11,7 @@ def is_solvable(board):
             if row % 3 == 0:
                 for col in range(0, 9, 3):
                     temp_sq = [1 for a in board[row:row+3, col:col+3].flatten() if a == i]
-                    if temp_sq > 1:
+                    if len(temp_sq) > 1:
                         return False
             if len(temp_row) > 1 or len(temp_column) > 1:
                 return False
