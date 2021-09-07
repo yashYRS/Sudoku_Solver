@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+from PIL import Image
+import model_utils as MU
 
 
 def enter_board_manually():
@@ -85,16 +87,15 @@ def get_board(img, points, model):
             x2, y2 = [int(i)-3 for i in points[row*10 + column + 11]]
             # area of 1 box, each box has 1 digit
             temp = img[y1:y2, x1:x2]
-            # invert the images, to conform with the images produced in Sudoku
-            # temp = cv2.bitwise_not(temp)
             if(temp.size != 0):
                 # to maintain uniformity with the model's requirements
-                temp = cv2.resize(temp, (36, 36))
-                display_img(temp, "adf")
                 cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
                 # predict the label
-                row_board.append(int(model.predict(np.reshape(temp, (1, -1)))))
-        print(row_board)
+                # display_img(temp, "digit")
+                temp = Image.fromarray(temp, 'L')
+                # temp.show()
+                row_board.append(MU.predict_image(model, temp))
+        print("Board", row_board)
         board.append(row_board)
-    display_img(img, "ADF")
+    display_img(img, "Image from which board is extracted")
     return board

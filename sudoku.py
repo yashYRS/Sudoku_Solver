@@ -36,13 +36,16 @@ def solve_puzzle_from_image(image, model_path):
     puzzle = cv2.imread(image)
     gray = cv2.cvtColor(puzzle, cv2.COLOR_BGR2GRAY)
     # blur to be able to detect all the edges in the image clearly
-    blur_gray = cv2.blur(gray, (3, 3))
-    edges = cv2.Canny(puzzle, 30, 90, apertureSize=3)
+    blur_gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    IU.display_img(blur_gray, "EDGEs")
+    edges = cv2.Canny(blur_gray, 30, 90, apertureSize=3)
+    IU.display_img(edges, "EDGEs")
 
     # 200 pixels is set to be the minimum length of the line to be detected
-    lines = cv2.HoughLines(edges, 2, np.pi/180, 300, 0, 0)
+    lines = cv2.HoughLines(edges, 1, np.pi/180, 160, 0, 0)
     # sort the lines based on the value of ppd
     lines = sorted(lines, key=lambda line: line[0][0])
+    print("Befofe", len(lines))
     # draw detected lines to see whether lines have been detected ..
     h_list, v_list = IU.flag_lines(lines, puzzle)
 
@@ -53,11 +56,8 @@ def solve_puzzle_from_image(image, model_path):
     # since number of points have to be 100
     if len(points) == 100:
         # convert to binary image
-        bin_img = cv2.adaptiveThreshold(blur_gray, 255,
-                                        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                        cv2.THRESH_BINARY_INV, 101, 1)
         # display_img(bin_img,"binary image")
-        board = GU.get_board(bin_img, points, model)
+        board = IU.get_board(edges, points, model)
         if GU.is_solvable(board):
             generate_result(board)
         else:

@@ -6,6 +6,9 @@ import torch
 import torch.nn
 from torchvision import datasets, transforms
 
+test_transforms = transforms.Compose([transforms.Resize((28, 28)),
+                                      transforms.ToTensor()])
+
 
 class LogisticRegression(torch.nn.Module):
     def __init__(self, inputSize=28, numClasses=10, channels=1):
@@ -64,6 +67,17 @@ def load_model(model_path):
     # Convert model to evaluation mode, and then return
     model.eval()
     return model
+
+
+def predict_image(model, image, thresh=3):
+    image_tensor = test_transforms(image)
+    image_tensor = torch.flatten(image_tensor)
+    # print(model(image_tensor).detach().numpy())
+    output_arr = model(image_tensor).detach().numpy()
+    if max(output_arr) > thresh:
+        print(max(output_arr), np.argmax(output_arr))
+        return np.argmax(output_arr)
+    return 0
 
 
 def train_model(model_path, epochs=100, lr=0.001, decay=1e-5):
