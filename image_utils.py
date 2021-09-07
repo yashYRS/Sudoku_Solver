@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import pandas as pd
 
 
 def enter_board_manually():

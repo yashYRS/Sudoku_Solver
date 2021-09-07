@@ -1,38 +1,110 @@
-import os
-import cv2
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.externals import joblib
-import pandas as pd
+from tqdm import tqdm
+from pathlib import Path
 
-pd.options.mode.chained_assignment = None  # default='warn'
+import torch
+import torch.nn
+from torchvision import datasets, transforms
 
 
-# ##----------LOAD THE DATA ------------------###
-# list of folders/files in a given directory
-list_folder = os.listdir("./Data")
-dataset = []
-labels_dataset = []
-i = 0
-for folder in list_folder:
-    # list files in a subdirectory
-    flist = os.listdir(os.path.join("./Data", folder))
-    for f in flist:
-        # read the images
-        im = cv2.imread(os.path.join("./Data", folder, f))
-        im = cv2.cvtColor(im, cv2.COLOR_RGB2GRAY)
-        im = cv2.blur(im, (3, 3))
-        im = cv2.resize(im, (36, 36))
-        dataset.append(im)
-        # make the dataset
-        labels_dataset.append(int(folder))
+class LogisticRegression(torch.nn.Module):
+    def __init__(self, inputSize=28, numClasses=10, channels=1):
+        super(LogisticRegression, self).__init__()
+        self.linear = torch.nn.Sequential(
+              torch.nn.Linear(inputSize*inputSize*channels, numClasses)
+        )
 
-dataset = np.reshape(dataset, (len(dataset), -1))
+    def forward(self, x):
+        outputs = self.linear(x)
+        return outputs
 
-# ##---------TRAIN THE MODEL-----------------###
 
-clf = KNeighborsClassifier()
-clf.fit(dataset, labels_dataset)
-# ##--------SAVE THE MODEL -------------------###
-joblib.dump(clf, "model.sav")
+def getNumCorrect(correct, outputs, labels):
+    # For computing Accuracy
+    _, predicted = torch.max(outputs.data, 1)
+    labelsTemp = labels.to("cpu")
+    predicted = predicted.to("cpu")
+    return correct + (predicted == labelsTemp).sum().item()
+
+
+def get_dataset(batchsize=64):
+    # Function to import datasets to be used for training
+    norm_params = ((0.5,), (0.5,))
+    train_transform = transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Normalize(*norm_params)
+                        ])
+    try:
+        trainset = datasets.MNIST(root='data', train=True,
+                                  transform=train_transform, download=False)
+    except Exception as e:
+        trainset = datasets.MNIST(root='data', train=True,
+                                  transform=train_transform, download=True)
+
+    torch.backends.cudnn.deterministic = True
+    torch.manual_seed(1)
+    torch.cuda.manual_seed(1)
+    np.random.seed(1)
+
+    trainloader = torch.utils.data.DataLoader(
+                            trainset, batch_size=batchsize, shuffle=True)
+    return trainloader
+
+
+def load_model(model_path):
+    # Get the device on which model is to be trained
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    if Path(model_path).exists():
+        model = LogisticRegression()
+        model.load_state_dict(torch.load(model_path))
+        model.to(device)
+    else:
+        print("MODEL NOT FOUND, TRAINING FROM SCRATCH")
+        model = train_model(model_path)
+    # Convert model to evaluation mode, and then return
+    model.eval()
+    return model
+
+
+def train_model(model_path, epochs=100, lr=0.001, decay=1e-5):
+
+    # Get important parameters for the MNIST dataset
+    train_loader = get_dataset()
+    # Get loss function
+    lossfn = torch.nn.CrossEntropyLoss()
+    # Get the device on which model is to be trained
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # Create the Model
+    model = LogisticRegression()
+    model.to(device)
+    model.train()
+    # Get optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=decay)
+
+    for epoch in tqdm(range(int(epochs))):
+        correct, total, epoch_loss = 0, 0, 0.0
+
+        # Training Epoch
+        for data in train_loader:
+            images, labels = data[0].to(device), data[1].to(device)
+            images = images.reshape((images.shape[0], -1))
+            optimizer.zero_grad()
+            outputs = model(images)
+
+            # Compute Loss
+            loss = lossfn(outputs, labels)
+            loss.backward()
+            epoch_loss += loss.item()
+
+            # Optimizer Step and scheduler step
+            optimizer.step()
+
+            # For computing Accuracy ; batch size added at each step
+            total += labels.size(0)
+            correct = getNumCorrect(correct, outputs, labels)
+
+        train_accuracy = 100*correct/total
+        print("Epoch", epoch, "Loss", epoch_loss, "Accuracy", train_accuracy)
+
+    torch.save(model.state_dict(), model_path)
+    return model
